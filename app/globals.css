@@ -1,0 +1,333 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', 'Helvetica', sans-serif;
+    background-color: #f5f5f5;
+    padding: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.controls {
+    margin-bottom: 20px;
+    text-align: center;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+}
+
+.btn {
+    padding: 12px 24px;
+    margin: 0 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.btnPrimary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btnPrimary:hover {
+    background-color: #0056b3;
+}
+
+.btnSecondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btnSecondary:hover {
+    background-color: #545b62;
+}
+
+/* Estilos del Recibo Fiscal */
+.reciboFiscal {
+    background-color: white;
+    padding: 30px;
+    border: 2px solid #333;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.encabezado {
+    border-bottom: 3px solid #333;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.logo h1 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.subtitulo {
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+}
+
+.infoEmpresa {
+    text-align: right;
+    font-size: 11px;
+}
+
+.infoEmpresa p {
+    margin-bottom: 5px;
+}
+
+.seccion {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px dashed #ccc;
+}
+
+.seccion:last-of-type {
+    border-bottom: none;
+}
+
+.seccion h2 {
+    font-size: 18px;
+    text-align: center;
+    margin-bottom: 15px;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.seccion h3 {
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: #333;
+    text-transform: uppercase;
+    border-bottom: 2px solid #333;
+    padding-bottom: 5px;
+}
+
+.comprobante {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.infoComprobante,
+.infoCliente,
+.infoDesglose {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+
+.etiqueta {
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 3px;
+    font-size: 11px;
+}
+
+.valor {
+    color: #333;
+    font-size: 12px;
+    padding: 5px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+/* Tabla de Detalle */
+.tablaDetalle {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.tablaDetalle thead {
+    background-color: #333;
+    color: white;
+}
+
+.tablaDetalle th,
+.tablaDetalle td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+.tablaDetalle th {
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.tablaDetalle td {
+    font-size: 12px;
+}
+
+.textRight {
+    text-align: right;
+}
+
+.tablaDetalle tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Resumen Fiscal */
+.resumenFiscal {
+    margin-top: 20px;
+}
+
+.resumenDerecha {
+    margin-left: auto;
+    width: 300px;
+    border: 2px solid #333;
+    padding: 15px;
+    background-color: #f8f9fa;
+}
+
+.lineaResumen {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.lineaResumen:last-child {
+    border-bottom: none;
+}
+
+.lineaResumenDestacada {
+    border-top: 2px solid #333;
+    margin-top: 10px;
+    padding-top: 15px;
+    font-size: 16px;
+}
+
+.etiquetaResumen {
+    font-weight: bold;
+    color: #333;
+}
+
+.valorResumen {
+    color: #333;
+    font-weight: normal;
+}
+
+/* Desglose ITBIS */
+.desgloseItbis {
+    background-color: #fff3cd;
+    padding: 15px;
+    border: 1px solid #ffc107;
+    border-radius: 5px;
+}
+
+/* Pie de Página */
+.piePagina {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #333;
+    text-align: center;
+    font-size: 10px;
+}
+
+.notaLegal {
+    margin-bottom: 10px;
+    color: #666;
+    line-height: 1.5;
+}
+
+.codigoQr {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border: 1px dashed #999;
+    font-family: 'Courier New', monospace;
+}
+
+/* Estilos para Impresión */
+@media print {
+    body {
+        background-color: white;
+        padding: 0;
+    }
+
+    .container {
+        box-shadow: none;
+        padding: 0;
+    }
+
+    .controls {
+        display: none;
+    }
+
+    .reciboFiscal {
+        border: none;
+        padding: 20px;
+    }
+
+    .btn {
+        display: none;
+    }
+
+    @page {
+        margin: 1cm;
+        size: letter;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .encabezado {
+        flex-direction: column;
+    }
+
+    .infoEmpresa {
+        text-align: left;
+        margin-top: 15px;
+    }
+
+    .infoComprobante,
+    .infoCliente,
+    .infoDesglose {
+        grid-template-columns: 1fr;
+    }
+
+    .resumenDerecha {
+        width: 100%;
+    }
+
+    .tablaDetalle {
+        font-size: 10px;
+    }
+
+    .tablaDetalle th,
+    .tablaDetalle td {
+        padding: 5px;
+    }
+}
+

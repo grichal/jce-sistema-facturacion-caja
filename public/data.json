@@ -1,0 +1,41 @@
+{
+  "empresa": {
+    "nombre": "Junta Central Electoral",
+    "rnc": "1-23-45678-9",
+    "direccion": "Av. 27 de Febrero #455, Santo Domingo",
+    "telefono": "(809) 533-3333"
+  },
+  "comprobante": {
+    "ncf": "E310000000001",
+    "fechaEmision": "15/01/2024",
+    "numeroFactura": "FAC-2024-001",
+    "codigoVerificacion": "ABC123XYZ789"
+  },
+  "cliente": {
+    "nombre": "Juan Pérez García",
+    "rnc": "001-1234567-8",
+    "direccion": "Calle Los Pinos #45, Santo Domingo",
+    "telefono": "(809) 555-9876"
+  },
+  "items": [
+    {
+      "descripcion": "Servicio de Consultoría IT",
+      "cantidad": 1,
+      "precioUnitario": 1000.00,
+      "subtotal": 1000.00
+    },
+    {
+      "descripcion": "Licencia de Software Empresarial",
+      "cantidad": 2,
+      "precioUnitario": 500.00,
+      "subtotal": 1000.00
+    }
+  ],
+  "resumenFiscal": {
+    "montoBruto": 2000.00,
+    "tasaItbis": 18,
+    "montoItbis": 360.00,
+    "montoTotal": 2360.00
+  }
+}
+
