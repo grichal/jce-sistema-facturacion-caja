@@ -328,162 +328,204 @@ export default function ServiciosPage() {
           </button>
         </div>
 
+  return (
+    <MainLayout>
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Servicios</h1>
+          <button
+            onClick={() => {
+              setShowForm(true)
+              setEditingId(null)
+              setFormData({
+                Costo: 0,
+                Descripcion: '',
+                Estatus: 'Activo',
+                TipoServicio: '',
+                TipoServicioRef: '',
+              })
+              setFormErrors({})
+            }}
+            className={styles.btnPrimary}
+          >
+            + Nuevo Servicio
+          </button>
+        </div>
+
+        {/* Modal Form */}
         {showForm && (
-          <div className={styles.formContainer}>
-            <h2 className={styles.formTitle}>
-              {editingId ? 'Editar Servicio' : 'Nuevo Servicio'}
-            </h2>
-            <form onSubmit={handleSubmit} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label htmlFor="tipoServicio">Tipo de Servicio *</label>
-                {loadingTipos ? (
-                  <div className={styles.loadingTipos}>Cargando tipos de servicios...</div>
-                ) : (
-                  <select
-                    id="tipoServicio"
-                    value={formData.TipoServicio}
+          <div className={styles.modalOverlay} onClick={() => setShowForm(false)}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>
+                  {editingId ? 'Editar Servicio' : 'Nuevo Servicio'}
+                </h2>
+                <button
+                  onClick={() => setShowForm(false)}
+                  className={styles.closeButton}
+                  aria-label="Cerrar modal"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className={styles.form}>
+                <div className={styles.formGroup}>
+                  <label htmlFor="tipoServicio">Tipo de Servicio *</label>
+                  {loadingTipos ? (
+                    <div className={styles.loadingTipos}>Cargando tipos de servicios...</div>
+                  ) : (
+                    <select
+                      id="tipoServicio"
+                      value={formData.TipoServicio}
+                      onChange={(e) => {
+                        setFormData({ ...formData, TipoServicio: e.target.value })
+                        if (formErrors.TipoServicio) {
+                          setFormErrors({ ...formErrors, TipoServicio: '' })
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (!e.target.value || e.target.value.trim() === '') {
+                          setFormErrors({ ...formErrors, TipoServicio: 'El tipo de servicio es obligatorio' })
+                        }
+                      }}
+                      required
+                      className={`${styles.input} ${formErrors.TipoServicio ? styles.inputError : ''}`}
+                    >
+                      <option value="">Seleccione un tipo de servicio</option>
+                      {tiposServicios.map((tipo) => (
+                        <option key={tipo.id} value={tipo.Nombre}>
+                          {tipo.Nombre}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {tiposServicios.length === 0 && !loadingTipos && (
+                    <p className={styles.warningMessage}>
+                      No hay tipos de servicios disponibles. Por favor, crea uno en{' '}
+                      <a href="/tipos-de-servicios" className={styles.link}>
+                        Tipos de Servicios
+                      </a>
+                    </p>
+                  )}
+                  {formErrors.TipoServicio && (
+                    <span className={styles.errorMessage}>{formErrors.TipoServicio}</span>
+                  )}
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="descripcion">Descripción *</label>
+                  <textarea
+                    id="descripcion"
+                    value={formData.Descripcion}
                     onChange={(e) => {
-                      setFormData({ ...formData, TipoServicio: e.target.value })
-                      if (formErrors.TipoServicio) {
-                        setFormErrors({ ...formErrors, TipoServicio: '' })
+                      setFormData({ ...formData, Descripcion: e.target.value })
+                      if (formErrors.Descripcion) {
+                        setFormErrors({ ...formErrors, Descripcion: '' })
                       }
                     }}
                     onBlur={(e) => {
-                      // Validar al perder el foco
                       if (!e.target.value || e.target.value.trim() === '') {
-                        setFormErrors({ ...formErrors, TipoServicio: 'El tipo de servicio es obligatorio' })
+                        setFormErrors({ ...formErrors, Descripcion: 'La descripción es obligatoria' })
                       }
                     }}
+                    rows={4}
+                    className={`${styles.textarea} ${formErrors.Descripcion ? styles.inputError : ''}`}
                     required
-                    className={`${styles.input} ${formErrors.TipoServicio ? styles.inputError : ''}`}
+                    placeholder="Descripción detallada del servicio"
+                  />
+                  {formErrors.Descripcion && (
+                    <span className={styles.errorMessage}>{formErrors.Descripcion}</span>
+                  )}
+                </div>
+
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="costo">Costo (RD$) *</label>
+                    <input
+                      type="number"
+                      id="costo"
+                      value={formData.Costo || ''}
+                      onChange={(e) => {
+                        const inputValue = e.target.value
+                        const value = inputValue === '' ? 0 : parseFloat(inputValue)
+                        setFormData({
+                          ...formData,
+                          Costo: isNaN(value) ? 0 : value,
+                        })
+                        if (formErrors.Costo) {
+                          setFormErrors({ ...formErrors, Costo: '' })
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = parseFloat(e.target.value) || 0
+                        if (value <= 0) {
+                          setFormErrors({ ...formErrors, Costo: 'El costo debe ser mayor a 0' })
+                        }
+                      }}
+                      required
+                      min="0.01"
+                      step="0.01"
+                      className={`${styles.input} ${formErrors.Costo ? styles.inputError : ''}`}
+                      placeholder="0.00"
+                    />
+                    {formErrors.Costo && (
+                      <span className={styles.errorMessage}>{formErrors.Costo}</span>
+                    )}
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label htmlFor="estatus">Estatus *</label>
+                    <select
+                      id="estatus"
+                      value={formData.Estatus}
+                      onChange={(e) => {
+                        setFormData({ ...formData, Estatus: e.target.value })
+                        if (formErrors.Estatus) {
+                          setFormErrors({ ...formErrors, Estatus: '' })
+                        }
+                      }}
+                      required
+                      className={`${styles.input} ${formErrors.Estatus ? styles.inputError : ''}`}
+                    >
+                      <option value="">Seleccione un estatus</option>
+                      <option value="Activo">Activo</option>
+                      <option value="Inactivo">Inactivo</option>
+                    </select>
+                    {formErrors.Estatus && (
+                      <span className={styles.errorMessage}>{formErrors.Estatus}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="tipoServicioRef">Tipo Servicio Ref (Opcional)</label>
+                  <input
+                    type="text"
+                    id="tipoServicioRef"
+                    value={formData.TipoServicioRef || ''}
+                    onChange={(e) =>
+                      setFormData({ ...formData, TipoServicioRef: e.target.value })
+                    }
+                    className={styles.input}
+                    placeholder="Referencia del tipo de servicio"
+                  />
+                </div>
+
+                <div className={styles.formActions}>
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className={styles.btnCancel}
                   >
-                    <option value="">Seleccione un tipo de servicio</option>
-                    {tiposServicios.map((tipo) => (
-                      <option key={tipo.id} value={tipo.Nombre}>
-                        {tipo.Nombre}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {tiposServicios.length === 0 && !loadingTipos && (
-                  <p className={styles.warningMessage}>
-                    No hay tipos de servicios disponibles. Por favor, crea uno en{' '}
-                    <a href="/tipos-de-servicios" className={styles.link}>
-                      Tipos de Servicios
-                    </a>
-                  </p>
-                )}
-                {formErrors.TipoServicio && (
-                  <span className={styles.errorMessage}>{formErrors.TipoServicio}</span>
-                )}
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="descripcion">Descripción *</label>
-                <textarea
-                  id="descripcion"
-                  value={formData.Descripcion}
-                  onChange={(e) => {
-                    setFormData({ ...formData, Descripcion: e.target.value })
-                    if (formErrors.Descripcion) {
-                      setFormErrors({ ...formErrors, Descripcion: '' })
-                    }
-                  }}
-                  onBlur={(e) => {
-                    // Validar al perder el foco
-                    if (!e.target.value || e.target.value.trim() === '') {
-                      setFormErrors({ ...formErrors, Descripcion: 'La descripción es obligatoria' })
-                    }
-                  }}
-                  rows={4}
-                  className={`${styles.textarea} ${formErrors.Descripcion ? styles.inputError : ''}`}
-                  required
-                  placeholder="Descripción detallada del servicio"
-                />
-                {formErrors.Descripcion && (
-                  <span className={styles.errorMessage}>{formErrors.Descripcion}</span>
-                )}
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="costo">Costo (RD$) *</label>
-                <input
-                  type="number"
-                  id="costo"
-                  value={formData.Costo || ''}
-                  onChange={(e) => {
-                    const inputValue = e.target.value
-                    // Permitir campo vacío mientras escribe, pero validar al enviar
-                    const value = inputValue === '' ? 0 : parseFloat(inputValue)
-                    setFormData({
-                      ...formData,
-                      Costo: isNaN(value) ? 0 : value,
-                    })
-                    if (formErrors.Costo) {
-                      setFormErrors({ ...formErrors, Costo: '' })
-                    }
-                  }}
-                  onBlur={(e) => {
-                    // Validar al perder el foco
-                    const value = parseFloat(e.target.value) || 0
-                    if (value <= 0) {
-                      setFormErrors({ ...formErrors, Costo: 'El costo debe ser mayor a 0' })
-                    }
-                  }}
-                  required
-                  min="0.01"
-                  step="0.01"
-                  className={`${styles.input} ${formErrors.Costo ? styles.inputError : ''}`}
-                  placeholder="0.00"
-                />
-                {formErrors.Costo && (
-                  <span className={styles.errorMessage}>{formErrors.Costo}</span>
-                )}
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="estatus">Estatus *</label>
-                <select
-                  id="estatus"
-                  value={formData.Estatus}
-                  onChange={(e) => {
-                    setFormData({ ...formData, Estatus: e.target.value })
-                    if (formErrors.Estatus) {
-                      setFormErrors({ ...formErrors, Estatus: '' })
-                    }
-                  }}
-                  required
-                  className={`${styles.input} ${formErrors.Estatus ? styles.inputError : ''}`}
-                >
-                  <option value="">Seleccione un estatus</option>
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
-                </select>
-                {formErrors.Estatus && (
-                  <span className={styles.errorMessage}>{formErrors.Estatus}</span>
-                )}
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="tipoServicioRef">Tipo Servicio Ref (Opcional)</label>
-                <input
-                  type="text"
-                  id="tipoServicioRef"
-                  value={formData.TipoServicioRef || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, TipoServicioRef: e.target.value })
-                  }
-                  className={styles.input}
-                  placeholder="Referencia del tipo de servicio"
-                />
-              </div>
-
-              <div className={styles.formActions}>
-                <button type="submit" className={styles.btnSubmit}>
-                  {editingId ? 'Actualizar' : 'Crear'} Servicio
-                </button>
-              </div>
-            </form>
+                    Cancelar
+                  </button>
+                  <button type="submit" className={styles.btnSubmit}>
+                    {editingId ? 'Actualizar' : 'Crear'} Servicio
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
@@ -594,5 +636,5 @@ export default function ServiciosPage() {
       </div>
     </MainLayout>
   )
-}
-
+  )
+  

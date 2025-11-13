@@ -20,7 +20,7 @@ export default function CierreCajaPage() {
 
   async function handleGuardar() {
     setLoading(true)
-  try {
+    try {
       const payload = {
         fecha: new Date().toISOString(),
         usuario: auth.user ? auth.user.username : 'usuario-de-tarea',
