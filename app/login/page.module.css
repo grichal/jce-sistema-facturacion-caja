@@ -1,0 +1,14 @@
+.input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.btnPrimary {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  background: #0070f3;
+  color: white;
+  border: none;
+}

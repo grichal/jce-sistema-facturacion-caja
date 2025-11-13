@@ -1,333 +1,112 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* Modern global styles and design tokens
+   - Introduce CSS variables (approx. JCE palette)
+   - Use a modern reset and system fonts
+   - Provide base components: buttons, inputs, cards, tables
+
+   Assumption: The JCE visual identity uses a dominant blue palette with white backgrounds and
+   high-contrast text. I approximated accessible blue tones; if you have exact hex codes we can swap them.
+*/
+
+:root {
+  /* Palette derived from provided logo: warm gold & deep brown */
+  --color-primary: #c67a00; /* warm gold */
+  --color-primary-600: #a25f00; /* darker gold */
+  --color-accent: #451b00; /* deep brown for strong accents/text */
+  --color-surface: #ffffff;
+  --color-bg: #fbf6ef; /* very light warm background */
+  --color-muted: #7a6b55;
+  --color-text: #2b1b12; /* dark warm text */
+  --color-success: #16a34a;
+  --color-danger: #dc2626;
+  --shadow-1: 0 6px 18px rgba(36, 20, 6, 0.06);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --sidebar-width: 260px;
 }
 
+/* Reset */
+* { box-sizing: border-box; }
+*::selection { background: var(--color-primary); color: white; }
+html,body,#__next { height: 100%; }
 body {
-    font-family: 'Arial', 'Helvetica', sans-serif;
-    background-color: #f5f5f5;
-    padding: 20px;
-    color: #333;
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
 }
 
-.container {
-    max-width: 800px;
-    margin: 0 auto;
-    background-color: white;
-    padding: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+main { display:block; }
+
+/* Layout helpers */
+.app-container { display:flex; min-height:100vh; }
+.app-main { flex:1; margin-left: var(--sidebar-width); padding: 28px; }
+
+/* Cards */
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+  padding: 16px;
 }
 
-.controls {
-    margin-bottom: 20px;
-    text-align: center;
-    padding: 15px;
-    background-color: #f9f9f9;
-    border-radius: 5px;
+/* Buttons (modern, accessible) */
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  transition: all 0.18s ease;
 }
 
-.btn {
-    padding: 12px 24px;
-    margin: 0 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: all 0.3s ease;
+.btn { display:inline-flex; align-items:center; gap:8px; }
+.btn-primary {
+  background: linear-gradient(180deg,var(--color-primary),var(--color-primary-600));
+  color: white;
+  box-shadow: 0 6px 14px rgba(11,90,167,0.18);
 }
-
-.btnPrimary {
-    background-color: #007bff;
-    color: white;
+.btn-primary:hover { transform: translateY(-1px); }
+.btn-secondary {
+  background: #f3f4f6; color: var(--color-text);
+  border: 1px solid #e6e9ef;
 }
+.btn-ghost { background: transparent; color: var(--color-primary); }
 
-.btnPrimary:hover {
-    background-color: #0056b3;
+/* Forms */
+input, select, textarea {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e6e9ef;
+  background: white;
+  color: var(--color-text);
 }
+label { font-weight:600; color:var(--color-muted); font-size:14px; }
 
-.btnSecondary {
-    background-color: #6c757d;
-    color: white;
-}
+/* Tables */
+table { width:100%; border-collapse:collapse; }
+th,td { padding: 10px 12px; }
+thead th { background: linear-gradient(90deg,var(--color-primary),var(--color-primary-600)); color:#fff; font-weight:700; text-transform:uppercase; font-size:12px; }
+tbody tr { background: white; }
+tbody tr + tr { border-top: 8px solid transparent; }
 
-.btnSecondary:hover {
-    background-color: #545b62;
-}
+/* Utilities */
+.text-right { text-align:right; }
+.muted { color: var(--color-muted); }
 
-/* Estilos del Recibo Fiscal */
-.reciboFiscal {
-    background-color: white;
-    padding: 30px;
-    border: 2px solid #333;
-    font-size: 12px;
-    line-height: 1.6;
-}
+/* Sidebar placeholder sizing (components rely on this var) */
+.sidebar { width: var(--sidebar-width); }
 
-.encabezado {
-    border-bottom: 3px solid #333;
-    padding-bottom: 20px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-}
-
-.logo h1 {
-    font-size: 24px;
-    color: #333;
-    margin-bottom: 5px;
-}
-
-.subtitulo {
-    font-size: 14px;
-    color: #666;
-    font-style: italic;
-}
-
-.infoEmpresa {
-    text-align: right;
-    font-size: 11px;
-}
-
-.infoEmpresa p {
-    margin-bottom: 5px;
-}
-
-.seccion {
-    margin-bottom: 25px;
-    padding-bottom: 15px;
-    border-bottom: 1px dashed #ccc;
-}
-
-.seccion:last-of-type {
-    border-bottom: none;
-}
-
-.seccion h2 {
-    font-size: 18px;
-    text-align: center;
-    margin-bottom: 15px;
-    color: #333;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.seccion h3 {
-    font-size: 14px;
-    margin-bottom: 12px;
-    color: #333;
-    text-transform: uppercase;
-    border-bottom: 2px solid #333;
-    padding-bottom: 5px;
-}
-
-.comprobante {
-    background-color: #f8f9fa;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.infoComprobante,
-.infoCliente,
-.infoDesglose {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-.campo {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 10px;
-}
-
-.etiqueta {
-    font-weight: bold;
-    color: #555;
-    margin-bottom: 3px;
-    font-size: 11px;
-}
-
-.valor {
-    color: #333;
-    font-size: 12px;
-    padding: 5px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-}
-
-/* Tabla de Detalle */
-.tablaDetalle {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.tablaDetalle thead {
-    background-color: #333;
-    color: white;
-}
-
-.tablaDetalle th,
-.tablaDetalle td {
-    padding: 10px;
-    text-align: left;
-    border: 1px solid #ddd;
-}
-
-.tablaDetalle th {
-    font-size: 11px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-.tablaDetalle td {
-    font-size: 12px;
-}
-
-.textRight {
-    text-align: right;
-}
-
-.tablaDetalle tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
-
-/* Resumen Fiscal */
-.resumenFiscal {
-    margin-top: 20px;
-}
-
-.resumenDerecha {
-    margin-left: auto;
-    width: 300px;
-    border: 2px solid #333;
-    padding: 15px;
-    background-color: #f8f9fa;
-}
-
-.lineaResumen {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #ddd;
-}
-
-.lineaResumen:last-child {
-    border-bottom: none;
-}
-
-.lineaResumenDestacada {
-    border-top: 2px solid #333;
-    margin-top: 10px;
-    padding-top: 15px;
-    font-size: 16px;
-}
-
-.etiquetaResumen {
-    font-weight: bold;
-    color: #333;
-}
-
-.valorResumen {
-    color: #333;
-    font-weight: normal;
-}
-
-/* Desglose ITBIS */
-.desgloseItbis {
-    background-color: #fff3cd;
-    padding: 15px;
-    border: 1px solid #ffc107;
-    border-radius: 5px;
-}
-
-/* Pie de Página */
-.piePagina {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 2px solid #333;
-    text-align: center;
-    font-size: 10px;
-}
-
-.notaLegal {
-    margin-bottom: 10px;
-    color: #666;
-    line-height: 1.5;
-}
-
-.codigoQr {
-    margin-top: 15px;
-    padding: 10px;
-    background-color: #f0f0f0;
-    border: 1px dashed #999;
-    font-family: 'Courier New', monospace;
-}
-
-/* Estilos para Impresión */
+/* Print */
 @media print {
-    body {
-        background-color: white;
-        padding: 0;
-    }
-
-    .container {
-        box-shadow: none;
-        padding: 0;
-    }
-
-    .controls {
-        display: none;
-    }
-
-    .reciboFiscal {
-        border: none;
-        padding: 20px;
-    }
-
-    .btn {
-        display: none;
-    }
-
-    @page {
-        margin: 1cm;
-        size: letter;
-    }
+  body { background: white; }
+  .sidebar, nav, .btn { display:none !important; }
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-    .encabezado {
-        flex-direction: column;
-    }
-
-    .infoEmpresa {
-        text-align: left;
-        margin-top: 15px;
-    }
-
-    .infoComprobante,
-    .infoCliente,
-    .infoDesglose {
-        grid-template-columns: 1fr;
-    }
-
-    .resumenDerecha {
-        width: 100%;
-    }
-
-    .tablaDetalle {
-        font-size: 10px;
-    }
-
-    .tablaDetalle th,
-    .tablaDetalle td {
-        padding: 5px;
-    }
+@media (max-width: 900px) {
+  .app-main { margin-left: 200px; padding: 16px; }
 }
+
 

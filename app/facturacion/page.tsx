@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import MainLayout from '../components/MainLayout'
 import styles from './page.module.css'
 import { db } from '@/lib/firebase/config'
-import { collection, getDocs, addDoc, doc, getDoc } from 'firebase/firestore'
+import { useAuth } from '../components/AuthProvider'
+import { collection, getDocs, addDoc, doc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { useToast } from '../hooks/useToast'
 import { useRouter } from 'next/navigation'
 
@@ -26,8 +27,16 @@ interface Cliente {
   email?: string
 }
 
-interface FacturacionData {
+interface CartItem {
   servicioId: string
+  descripcion?: string
+  cantidad: number
+  precioUnitario: number
+  subtotal: number
+}
+
+interface FacturacionData {
+  items: CartItem[]
   cliente: Cliente
   requiereComprobanteFiscal: boolean
   metodoPago: 'efectivo' | 'tarjeta' | null
@@ -40,8 +49,10 @@ export default function FacturacionPage() {
   const [showClienteForm, setShowClienteForm] = useState(false)
   const [showPagoModal, setShowPagoModal] = useState(false)
   const [procesandoPago, setProcesandoPago] = useState(false)
+  const [selectedServicioId, setSelectedServicioId] = useState<string>('')
+
   const [facturacionData, setFacturacionData] = useState<FacturacionData>({
-    servicioId: '',
+    items: [],
     cliente: {
       nombre: '',
       rnc: '',
@@ -52,6 +63,7 @@ export default function FacturacionPage() {
     requiereComprobanteFiscal: false,
     metodoPago: null,
   })
+  const [cart, setCart] = useState<CartItem[]>([])
   const [nuevoCliente, setNuevoCliente] = useState<Cliente>({
     nombre: '',
     rnc: '',
@@ -62,6 +74,7 @@ export default function FacturacionPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const { showSuccess, showError } = useToast()
   const router = useRouter()
+  const auth = useAuth()
 
   useEffect(() => {
     cargarDatos()
@@ -198,12 +211,12 @@ export default function FacturacionPage() {
   }
 
   const procesarPago = async (metodo: 'efectivo' | 'tarjeta') => {
-    if (!facturacionData.servicioId || !facturacionData.cliente.nombre) {
+    if (cart.length === 0 || !facturacionData.cliente.nombre) {
       showError('Por favor, completa todos los campos obligatorios.')
       return
     }
-
-    setFacturacionData({ ...facturacionData, metodoPago: metodo })
+    // set the method on state for UI, but pass it explicitly to finalizarFacturacion
+  setFacturacionData({ ...facturacionData, metodoPago: metodo })
     setShowPagoModal(true)
 
     if (metodo === 'tarjeta') {
@@ -211,31 +224,28 @@ export default function FacturacionPage() {
       // Simular procesamiento de tarjeta con timeout de 3 segundos
       setTimeout(() => {
         setProcesandoPago(false)
-        finalizarFacturacion()
+        finalizarFacturacion(metodo)
       }, 3000)
     } else {
       // Efectivo: procesar inmediatamente
-      finalizarFacturacion()
+      finalizarFacturacion(metodo)
     }
   }
 
-  const finalizarFacturacion = async () => {
+  const finalizarFacturacion = async (metodoOverride?: 'efectivo' | 'tarjeta') => {
     try {
       // Obtener datos del servicio
-      if (!db || !facturacionData.servicioId) return
-
-      const servicioRef = doc(db, 'Servicios', facturacionData.servicioId)
-      const servicioSnap = await getDoc(servicioRef)
-
-      if (!servicioSnap.exists()) {
-        showError('El servicio seleccionado no existe.')
-        return
-      }
-
-      const servicio = servicioSnap.data() as Servicio
+      // Build items from cart (ensure latest prices from servicios list)
+      const serviciosMap = Object.fromEntries(servicios.map(s => [s.id, s]))
+      const items = cart.map(ci => ({
+        descripcion: ci.descripcion ?? (serviciosMap[ci.servicioId]?.Descripcion || serviciosMap[ci.servicioId]?.TipoServicio || ''),
+        cantidad: ci.cantidad,
+        precioUnitario: ci.precioUnitario,
+        subtotal: ci.subtotal,
+      }))
 
       // Calcular montos
-      const montoBruto = servicio.Costo
+      const montoBruto = items.reduce((sum, it) => sum + (it.subtotal ?? (it.precioUnitario * it.cantidad)), 0)
       const tasaItbis = 18
       const montoItbis = montoBruto * (tasaItbis / 100)
       const montoTotal = montoBruto + montoItbis
@@ -260,14 +270,7 @@ export default function FacturacionPage() {
           direccion: facturacionData.cliente.direccion,
           telefono: facturacionData.cliente.telefono,
         },
-        items: [
-          {
-            descripcion: servicio.Descripcion || servicio.TipoServicio,
-            cantidad: 1,
-            precioUnitario: servicio.Costo,
-            subtotal: servicio.Costo,
-          },
-        ],
+        items,
         resumenFiscal: {
           montoBruto,
           tasaItbis,
@@ -275,19 +278,43 @@ export default function FacturacionPage() {
           montoTotal: facturacionData.requiereComprobanteFiscal ? montoTotal : montoBruto,
         },
         requiereComprobanteFiscal: facturacionData.requiereComprobanteFiscal,
-        metodoPago: facturacionData.metodoPago,
+        metodoPago: metodoOverride ?? facturacionData.metodoPago,
       }
 
       // Guardar en localStorage para pasarlo al recibo
       localStorage.setItem('reciboFiscalData', JSON.stringify(reciboData))
 
-      showSuccess('Factura generada correctamente')
-      setShowPagoModal(false)
+      // También guardar la factura en Firestore para historial y cierres
+      try {
+        if (!db) {
+          showError('Firebase no está inicializado.')
+          return
+        }
+        const docRef = await addDoc(collection(db, 'Facturas'), {
+          ...reciboData,
+          resumenFiscal: reciboData.resumenFiscal,
+          metodoPago: reciboData.metodoPago,
+          requiereComprobanteFiscal: reciboData.requiereComprobanteFiscal,
+          items: reciboData.items,
+          totalVentas: reciboData.resumenFiscal.montoTotal,
+          createdAt: serverTimestamp(),
+          createdBy: auth.user ? { id: auth.user.id, username: auth.user.username } : null,
+        })
 
-      // Redirigir a la vista del recibo
-      setTimeout(() => {
-        router.push('/recibo-fiscal')
-      }, 1000)
+        showSuccess('Factura generada correctamente')
+        setShowPagoModal(false)
+
+        // Limpiar carrito
+        setCart([])
+
+        // Redirigir a la vista del recibo con id para cargar factura exacta
+        setTimeout(() => {
+          router.push(`/recibo-fiscal?id=${docRef.id}`)
+        }, 500)
+      } catch (err) {
+        console.error('Error guardando factura en Firestore:', err)
+        showError('Error guardando la factura.')
+      }
     } catch (error: any) {
       console.error('Error al finalizar facturación:', error)
       showError('Error al generar la factura.')
@@ -295,7 +322,31 @@ export default function FacturacionPage() {
     }
   }
 
-  const servicioSeleccionado = servicios.find((s) => s.id === facturacionData.servicioId)
+  const servicioSeleccionado = servicios.find((s) => s.id === selectedServicioId)
+
+  const addServiceToCart = () => {
+    if (!selectedServicioId) return
+    const s = servicios.find(ss => ss.id === selectedServicioId)
+    if (!s) return
+    const existing = cart.find(c => c.servicioId === s.id)
+    if (existing) {
+      setCart(cart.map(c => c.servicioId === s.id ? { ...c, cantidad: c.cantidad + 1, subtotal: (c.cantidad+1)*c.precioUnitario } : c))
+    } else {
+      const item: CartItem = { servicioId: s.id, descripcion: s.Descripcion || s.TipoServicio, cantidad: 1, precioUnitario: s.Costo, subtotal: s.Costo }
+      setCart([...cart, item])
+    }
+  }
+
+  const removeFromCart = (servicioId: string) => {
+    setCart(cart.filter(c => c.servicioId !== servicioId))
+  }
+
+  const updateQuantity = (servicioId: string, cantidad: number) => {
+    if (cantidad <= 0) return
+    setCart(cart.map(c => c.servicioId === servicioId ? { ...c, cantidad, subtotal: cantidad * c.precioUnitario } : c))
+  }
+
+  const montoBrutoCart = cart.reduce((s, it) => s + (it.subtotal ?? 0), 0)
 
   return (
     <MainLayout>
@@ -305,27 +356,25 @@ export default function FacturacionPage() {
         <div className={styles.formSection}>
           <h2 className={styles.sectionTitle}>1. Seleccionar Servicio</h2>
           <div className={styles.formGroup}>
-            <label htmlFor="servicio">Servicio *</label>
-            <select
-              id="servicio"
-              value={facturacionData.servicioId}
-              onChange={(e) =>
-                setFacturacionData({ ...facturacionData, servicioId: e.target.value })
-              }
-              className={styles.select}
-              required
-            >
-              <option value="">Seleccione un servicio</option>
-              {servicios.map((servicio) => (
-                <option key={servicio.id} value={servicio.id}>
-                  {servicio.Descripcion || servicio.TipoServicio} - {new Intl.NumberFormat('es-DO', {
-                    style: 'currency',
-                    currency: 'DOP',
-                  }).format(servicio.Costo)}
-                </option>
-              ))}
-            </select>
-          </div>
+              <label htmlFor="servicio">Servicio *</label>
+              <select
+                id="servicio"
+                value={selectedServicioId}
+                onChange={(e) => setSelectedServicioId(e.target.value)}
+                className={styles.select}
+              >
+                <option value="">Seleccione un servicio</option>
+                {servicios.map((servicio) => (
+                  <option key={servicio.id} value={servicio.id}>
+                    {servicio.Descripcion || servicio.TipoServicio} - {new Intl.NumberFormat('es-DO', {
+                      style: 'currency',
+                      currency: 'DOP',
+                    }).format(servicio.Costo)}
+                  </option>
+                ))}
+              </select>
+              <button onClick={addServiceToCart} style={{marginLeft:8}}>Agregar</button>
+            </div>
 
           {servicioSeleccionado && (
             <div className={styles.servicioInfo}>
@@ -339,6 +388,29 @@ export default function FacturacionPage() {
                   currency: 'DOP',
                 }).format(servicioSeleccionado.Costo)}
               </p>
+            </div>
+          )}
+
+          {cart.length > 0 && (
+            <div style={{marginTop:12}}>
+              <h3>Carrito</h3>
+              <table style={{width:'100%'}}>
+                <thead><tr><th>Descripción</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th><th></th></tr></thead>
+                <tbody>
+                  {cart.map(it => (
+                    <tr key={it.servicioId}>
+                      <td>{it.descripcion}</td>
+                      <td><input type="number" value={it.cantidad} min={1} style={{width:60}} onChange={(e)=>updateQuantity(it.servicioId, Number(e.target.value))} /></td>
+                      <td>{new Intl.NumberFormat('es-DO', {style:'currency', currency:'DOP'}).format(it.precioUnitario)}</td>
+                      <td>{new Intl.NumberFormat('es-DO', {style:'currency', currency:'DOP'}).format(it.subtotal)}</td>
+                      <td><button onClick={()=>removeFromCart(it.servicioId)}>Eliminar</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div style={{textAlign:'right', marginTop:8}}>
+                <strong>Subtotal: {new Intl.NumberFormat('es-DO', {style:'currency', currency:'DOP'}).format(montoBrutoCart)}</strong>
+              </div>
             </div>
           )}
         </div>
@@ -502,49 +574,62 @@ export default function FacturacionPage() {
           </div>
         </div>
 
-        {servicioSeleccionado && facturacionData.cliente.nombre && (
+        {cart.length > 0 && facturacionData.cliente.nombre && (
           <div className={styles.resumenSection}>
             <h2 className={styles.sectionTitle}>Resumen de Facturación</h2>
             <div className={styles.resumen}>
               <div className={styles.resumenItem}>
-                <span>Servicio:</span>
-                <span>{servicioSeleccionado.Descripcion || servicioSeleccionado.TipoServicio}</span>
-              </div>
-              <div className={styles.resumenItem}>
                 <span>Cliente:</span>
                 <span>{facturacionData.cliente.nombre}</span>
               </div>
-              <div className={styles.resumenItem}>
-                <span>Monto Bruto:</span>
-                <span>
-                  {new Intl.NumberFormat('es-DO', {
-                    style: 'currency',
-                    currency: 'DOP',
-                  }).format(servicioSeleccionado.Costo)}
-                </span>
+
+              <div className={styles.detalleResumenItems}>
+                <table style={{width:'100%'}}>
+                  <thead>
+                    <tr>
+                      <th>Descripción</th>
+                      <th className={styles.textRight}>Cantidad</th>
+                      <th className={styles.textRight}>Precio</th>
+                      <th className={styles.textRight}>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cart.map((it) => (
+                      <tr key={it.servicioId}>
+                        <td>{it.descripcion}</td>
+                        <td className={styles.textRight}>{it.cantidad}</td>
+                        <td className={styles.textRight}>{new Intl.NumberFormat('es-DO', {style:'currency', currency:'DOP'}).format(it.precioUnitario)}</td>
+                        <td className={styles.textRight}>{new Intl.NumberFormat('es-DO', {style:'currency', currency:'DOP'}).format(it.subtotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              {facturacionData.requiereComprobanteFiscal && (
-                <>
+
+              <div style={{marginTop:8, textAlign:'right'}}>
+                <div className={styles.resumenItem}>
+                  <span>Subtotal (Monto Bruto):</span>
+                  <span>
+                    {new Intl.NumberFormat('es-DO', {style:'currency', currency:'DOP'}).format(montoBrutoCart)}
+                  </span>
+                </div>
+
+                {facturacionData.requiereComprobanteFiscal && (
                   <div className={styles.resumenItem}>
                     <span>ITBIS (18%):</span>
                     <span>
-                      {new Intl.NumberFormat('es-DO', {
-                        style: 'currency',
-                        currency: 'DOP',
-                      }).format(servicioSeleccionado.Costo * 0.18)}
+                      {new Intl.NumberFormat('es-DO', {style:'currency', currency:'DOP'}).format(montoBrutoCart * 0.18)}
                     </span>
                   </div>
-                  <div className={styles.resumenItemTotal}>
-                    <span>Total:</span>
-                    <span>
-                      {new Intl.NumberFormat('es-DO', {
-                        style: 'currency',
-                        currency: 'DOP',
-                      }).format(servicioSeleccionado.Costo * 1.18)}
-                    </span>
-                  </div>
-                </>
-              )}
+                )}
+
+                <div className={styles.resumenItemTotal}>
+                  <span>Total:</span>
+                  <span>
+                    {new Intl.NumberFormat('es-DO', {style:'currency', currency:'DOP'}).format(facturacionData.requiereComprobanteFiscal ? montoBrutoCart * 1.18 : montoBrutoCart)}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className={styles.pagoButtons}>

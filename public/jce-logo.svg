@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <style>
+      .bg { fill: #c67a00; }
+      .finger { fill: #ffffff; }
+      .text { fill: #451b00; font-family: 'Helvetica Neue', Arial, sans-serif; font-weight:700 }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="600" height="900" rx="0" />
+
+  <!-- simplified fingerprint arcs -->
+  <g transform="translate(40,30) scale(0.9)">
+    <path class="finger" d="M120 80 C220 40 360 40 460 120 L470 140 C370 60 230 60 130 100 Z" opacity="1"/>
+    <path class="finger" d="M80 220 C160 140 320 120 420 200 L430 220 C330 150 170 170 100 230 Z"/>
+    <path class="finger" d="M60 360 C140 260 300 240 380 320 L390 340 C310 270 160 290 90 360 Z"/>
+    <path class="finger" d="M80 520 C160 420 300 400 420 480 L430 500 C320 420 180 440 100 520 Z"/>
+    <path class="finger" d="M120 680 C200 600 320 580 420 660 L430 680 C340 600 220 620 120 680 Z"/>
+  </g>
+
+  <!-- JCE text -->
+  <g transform="translate(40,720)">
+    <text x="0" y="0" font-size="140" class="text">JCE</text>
+  </g>
+</svg>

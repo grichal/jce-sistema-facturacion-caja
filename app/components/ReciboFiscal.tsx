@@ -1,7 +1,10 @@
-'use client'
+ 'use client'
 
 import { useEffect, useState } from 'react'
 import styles from './ReciboFiscal.module.css'
+import { getLatestFactura, getFacturaById } from '../../lib/firebase/facturas'
+import { useAuth } from './AuthProvider'
+import { useSearchParams } from 'next/navigation'
 
 interface ReciboData {
   empresa: {
@@ -41,36 +44,62 @@ interface ReciboData {
 export default function ReciboFiscal() {
   const [data, setData] = useState<ReciboData | null>(null)
   const [loading, setLoading] = useState(true)
+  const auth = useAuth()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Primero intentar cargar datos desde localStorage (si vienen de facturación)
-    const reciboDataFromStorage = localStorage.getItem('reciboFiscalData')
-    
-    if (reciboDataFromStorage) {
+    const load = async () => {
+      // Intentar parámetro ?id= para cargar factura específica
+      const id = searchParams?.get('id')
+      if (id) {
+        try {
+          const f = await getFacturaById(id)
+          if (f) {
+            setData(f as ReciboData)
+            setLoading(false)
+            return
+          }
+        } catch (err) {
+          console.error('Error cargando factura por id:', err)
+        }
+      }
+
+      // Luego intentar cargar datos desde localStorage (si vienen de facturación)
+      const reciboDataFromStorage = localStorage.getItem('reciboFiscalData')
+      if (reciboDataFromStorage) {
+        try {
+          const parsedData = JSON.parse(reciboDataFromStorage)
+          setData(parsedData)
+          setLoading(false)
+          // Limpiar localStorage después de cargar
+          localStorage.removeItem('reciboFiscalData')
+          return
+        } catch (error) {
+          console.error('Error al parsear datos del localStorage:', error)
+        }
+      }
+
+      // Si no hay datos en localStorage, intentar cargar la factura más reciente desde Firestore
       try {
-        const parsedData = JSON.parse(reciboDataFromStorage)
-        setData(parsedData)
-        setLoading(false)
-        // Limpiar localStorage después de cargar
-        localStorage.removeItem('reciboFiscalData')
-        return
+        const latest = await getLatestFactura()
+        if (latest) {
+          setData(latest as ReciboData)
+          return
+        }
+
+        // Fallback: cargar desde el JSON de ejemplo
+        const response = await fetch('/data.json')
+        const jsonData = await response.json()
+        setData(jsonData as ReciboData)
       } catch (error) {
-        console.error('Error al parsear datos del localStorage:', error)
+        console.error('Error al cargar los datos:', error)
+      } finally {
+        setLoading(false)
       }
     }
-    
-    // Si no hay datos en localStorage, cargar desde el JSON
-    fetch('/data.json')
-      .then((response) => response.json())
-      .then((jsonData: ReciboData) => {
-        setData(jsonData)
-        setLoading(false)
-      })
-      .catch((error) => {
-        console.error('Error al cargar los datos:', error)
-        setLoading(false)
-      })
-  }, [])
+
+    load()
+  }, [searchParams])
 
   // Función para formatear números como moneda dominicana
   const formatearMoneda = (monto: number): string => {
@@ -154,6 +183,13 @@ export default function ReciboFiscal() {
                 <span className={styles.valor}>
                   {data.metodoPago === 'efectivo' ? '💵 Efectivo' : '💳 Tarjeta'}
                 </span>
+              </div>
+            )}
+            {/** mostrar quién creó la factura si existe */}
+            {(data as any).createdBy && (
+              <div className={styles.campo}>
+                <span className={styles.etiqueta}>Facturado por:</span>
+                <span className={styles.valor}>{(data as any).createdBy.username}</span>
               </div>
             )}
           </div>

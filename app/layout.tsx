@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import ToastContainer from './components/ToastContainer'
+import AuthProvider from './components/AuthProvider'
 
 export const metadata: Metadata = {
   title: 'Sistema de Facturación Fiscal',
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
-        <ToastContainer>{children}</ToastContainer>
+        <AuthProvider>
+          <ToastContainer>{children}</ToastContainer>
+        </AuthProvider>
       </body>
     </html>
   )
