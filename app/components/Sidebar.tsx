@@ -54,7 +54,7 @@ export default function Sidebar() {
     <aside className={styles.sidebar}>
       <div className={styles.sidebarHeader}>
         <div style={{display:'flex', alignItems:'center', gap:12}}>
-          <Image src="/jce-logo.svg" alt="JCE" width={56} height={84} />
+          <Image src="/LOGO_JCE.svg.png" alt="JCE" width={70} height={84} />
           <div>
             <h2 className={styles.logo}>Sistema de Facturación</h2>
             <div className={styles.logoSub}>Caja - JCE</div>
