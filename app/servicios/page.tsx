@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import MainLayout from '../components/MainLayout'
 import styles from './page.module.css'
 import { db } from '@/lib/firebase/config'
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore'
 import { useToast } from '../hooks/useToast'
+import MainLayout from '../components/MainLayout'
 
 interface Servicio {
   id?: string
@@ -40,6 +40,15 @@ export default function ServiciosPage() {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [showTipoForm, setShowTipoForm] = useState(false)
+  const [tipoFormData, setTipoFormData] = useState<TipoServicio>({
+    id: '',
+    Nombre: '',
+    Descripcion: '',
+    Estatus: 'Activo',
+  })
+  const [editingTipoId, setEditingTipoId] = useState<string | null>(null)
+  const [tipoFormErrors, setTipoFormErrors] = useState<Record<string, string>>({})
   const { showSuccess, showError } = useToast()
 
   // Cargar servicios y tipos de servicios desde Firebase
@@ -140,6 +149,15 @@ export default function ServiciosPage() {
       isValid: Object.keys(errors).length === 0,
       errors
     }
+  }
+
+  // Validación para tipo de servicio
+  const validateTipoForm = (): { isValid: boolean; errors: Record<string, string> } => {
+    const errors: Record<string, string> = {}
+    if (!tipoFormData.Nombre || tipoFormData.Nombre.trim() === '') {
+      errors.Nombre = 'El nombre es obligatorio'
+    }
+    return { isValid: Object.keys(errors).length === 0, errors }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -262,6 +280,63 @@ export default function ServiciosPage() {
     }
   }
 
+  // Manejo de tipos de servicios
+  const handleTipoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const validation = validateTipoForm()
+    setTipoFormErrors(validation.errors)
+    if (!validation.isValid) {
+      const msgs = Object.values(validation.errors)
+      if (msgs.length) showError(msgs[0])
+      return
+    }
+    if (!db) {
+      showError('Firebase no está inicializado.')
+      return
+    }
+    try {
+      const { id, ...datos } = tipoFormData as any
+      if (editingTipoId) {
+        await updateDoc(doc(db, 'tiposDeServicio', editingTipoId), datos)
+        showSuccess('Tipo de servicio actualizado')
+      } else {
+        await addDoc(collection(db, 'tiposDeServicio'), datos)
+        showSuccess('Tipo de servicio creado')
+      }
+      // limpiar y recargar
+      setTipoFormData({ id: '', Nombre: '', Descripcion: '', Estatus: 'Activo' })
+      setEditingTipoId(null)
+      setTipoFormErrors({})
+      setShowTipoForm(false)
+      cargarTiposServicios()
+    } catch (error: any) {
+      console.error('Error tipos:', error)
+      showError(error?.message || 'Error al guardar tipo de servicio')
+    }
+  }
+
+  const handleTipoEdit = (tipo: TipoServicio) => {
+    setTipoFormData({ ...tipo })
+    setEditingTipoId(tipo.id)
+    setShowTipoForm(true)
+  }
+
+  const handleTipoDelete = async (id: string) => {
+    if (!confirm('¿Eliminar tipo de servicio?')) return
+    if (!db) {
+      showError('Firebase no está inicializado.')
+      return
+    }
+    try {
+      await deleteDoc(doc(db, 'tiposDeServicio', id))
+      showSuccess('Tipo eliminado')
+      cargarTiposServicios()
+    } catch (error: any) {
+      console.error('Error al eliminar tipo:', error)
+      showError(error?.message || 'Error al eliminar tipo')
+    }
+  }
+
   const formatearMoneda = (monto: number): string => {
     return new Intl.NumberFormat('es-DO', {
       style: 'currency',
@@ -325,30 +400,6 @@ export default function ServiciosPage() {
             className={styles.btnPrimary}
           >
             {showForm ? 'Cancelar' : '+ Nuevo Servicio'}
-          </button>
-        </div>
-
-  return (
-    <MainLayout>
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>Servicios</h1>
-          <button
-            onClick={() => {
-              setShowForm(true)
-              setEditingId(null)
-              setFormData({
-                Costo: 0,
-                Descripcion: '',
-                Estatus: 'Activo',
-                TipoServicio: '',
-                TipoServicioRef: '',
-              })
-              setFormErrors({})
-            }}
-            className={styles.btnPrimary}
-          >
-            + Nuevo Servicio
           </button>
         </div>
 
@@ -529,6 +580,97 @@ export default function ServiciosPage() {
           </div>
         )}
 
+        {/* Formulario para Tipos de Servicio */}
+        {showTipoForm && (
+          <div className={styles.modalOverlay} onClick={() => setShowTipoForm(false)}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>
+                  {editingTipoId ? 'Editar Tipo de Servicio' : 'Nuevo Tipo de Servicio'}
+                </h2>
+                <button
+                  onClick={() => setShowTipoForm(false)}
+                  className={styles.closeButton}
+                  aria-label="Cerrar modal"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleTipoSubmit} className={styles.form}>
+                <div className={styles.formGroup}>
+                  <label htmlFor="nombre">Nombre *</label>
+                  <input
+                    type="text"
+                    id="nombre"
+                    value={tipoFormData.Nombre}
+                    onChange={(e) => {
+                      setTipoFormData({ ...tipoFormData, Nombre: e.target.value })
+                      if (tipoFormErrors.Nombre) {
+                        setTipoFormErrors({ ...tipoFormErrors, Nombre: '' })
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!e.target.value || e.target.value.trim() === '') {
+                        setTipoFormErrors({ ...tipoFormErrors, Nombre: 'El nombre es obligatorio' })
+                      }
+                    }}
+                    required
+                    className={`${styles.input} ${tipoFormErrors.Nombre ? styles.inputError : ''}`}
+                    placeholder="Nombre del tipo de servicio"
+                  />
+                  {tipoFormErrors.Nombre && (
+                    <span className={styles.errorMessage}>{tipoFormErrors.Nombre}</span>
+                  )}
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="descripcion">Descripción (Opcional)</label>
+                  <textarea
+                    id="descripcion"
+                    value={tipoFormData.Descripcion}
+                    onChange={(e) => setTipoFormData({ ...tipoFormData, Descripcion: e.target.value })}
+                    rows={4}
+                    className={styles.textarea}
+                    placeholder="Descripción del tipo de servicio"
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="estatusTipo">Estatus *</label>
+                  <select
+                    id="estatusTipo"
+                    value={tipoFormData.Estatus}
+                    onChange={(e) => setTipoFormData({ ...tipoFormData, Estatus: e.target.value })}
+                    required
+                    className={`${styles.input} ${tipoFormErrors.Estatus ? styles.inputError : ''}`}
+                  >
+                    <option value="">Seleccione un estatus</option>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+                  {tipoFormErrors.Estatus && (
+                    <span className={styles.errorMessage}>{tipoFormErrors.Estatus}</span>
+                  )}
+                </div>
+
+                <div className={styles.formActions}>
+                  <button
+                    type="button"
+                    onClick={() => setShowTipoForm(false)}
+                    className={styles.btnCancel}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className={styles.btnSubmit}>
+                    {editingTipoId ? 'Actualizar' : 'Crear'} Tipo de Servicio
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {!loading && servicios.length > 0 && (
           <div className={styles.filtersContainer}>
             <div className={styles.searchContainer}>
@@ -633,8 +775,7 @@ export default function ServiciosPage() {
             ))}
           </div>
         )}
-      </div>
-    </MainLayout>
-  )
-  )
-  
+        </div>
+      </MainLayout>
+    )
+  }

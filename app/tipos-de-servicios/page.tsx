@@ -206,80 +206,99 @@ export default function TiposDeServiciosPage() {
         </div>
 
         {showForm && (
-          <div className={styles.formContainer}>
-            <h2 className={styles.formTitle}>
-              {editingId ? 'Editar Tipo de Servicio' : 'Nuevo Tipo de Servicio'}
-            </h2>
-            <form onSubmit={handleSubmit} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label htmlFor="nombre">Nombre del Tipo de Servicio *</label>
-                <input
-                  type="text"
-                  id="nombre"
-                  value={formData.Nombre}
-                  onChange={(e) => {
-                    setFormData({ ...formData, Nombre: e.target.value })
-                    if (formErrors.Nombre) {
-                      setFormErrors({ ...formErrors, Nombre: '' })
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (!e.target.value || e.target.value.trim() === '') {
-                      setFormErrors({ ...formErrors, Nombre: 'El nombre del tipo de servicio es obligatorio' })
-                    }
-                  }}
-                  required
-                  className={`${styles.input} ${formErrors.Nombre ? styles.inputError : ''}`}
-                  placeholder="Ej: Consultoría, Desarrollo, etc."
-                />
-                {formErrors.Nombre && (
-                  <span className={styles.errorMessage}>{formErrors.Nombre}</span>
-                )}
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="descripcion">Descripción (Opcional)</label>
-                <textarea
-                  id="descripcion"
-                  value={formData.Descripcion || ''}
-                  onChange={(e) => {
-                    setFormData({ ...formData, Descripcion: e.target.value })
-                  }}
-                  rows={4}
-                  className={styles.textarea}
-                  placeholder="Descripción del tipo de servicio"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="estatus">Estatus *</label>
-                <select
-                  id="estatus"
-                  value={formData.Estatus}
-                  onChange={(e) => {
-                    setFormData({ ...formData, Estatus: e.target.value })
-                    if (formErrors.Estatus) {
-                      setFormErrors({ ...formErrors, Estatus: '' })
-                    }
-                  }}
-                  required
-                  className={`${styles.input} ${formErrors.Estatus ? styles.inputError : ''}`}
+          <div className={styles.modalOverlay} onClick={() => setShowForm(false)}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>
+                  {editingId ? 'Editar Tipo de Servicio' : 'Nuevo Tipo de Servicio'}
+                </h2>
+                <button
+                  onClick={() => setShowForm(false)}
+                  className={styles.closeButton}
+                  aria-label="Cerrar modal"
                 >
-                  <option value="">Seleccione un estatus</option>
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
-                </select>
-                {formErrors.Estatus && (
-                  <span className={styles.errorMessage}>{formErrors.Estatus}</span>
-                )}
-              </div>
-
-              <div className={styles.formActions}>
-                <button type="submit" className={styles.btnSubmit}>
-                  {editingId ? 'Actualizar' : 'Crear'} Tipo de Servicio
+                  ✕
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleSubmit} className={styles.form}>
+                <div className={styles.formGroup}>
+                  <label htmlFor="nombre">Nombre del Tipo de Servicio *</label>
+                  <input
+                    type="text"
+                    id="nombre"
+                    value={formData.Nombre}
+                    onChange={(e) => {
+                      setFormData({ ...formData, Nombre: e.target.value })
+                      if (formErrors.Nombre) {
+                        setFormErrors({ ...formErrors, Nombre: '' })
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!e.target.value || e.target.value.trim() === '') {
+                        setFormErrors({ ...formErrors, Nombre: 'El nombre del tipo de servicio es obligatorio' })
+                      }
+                    }}
+                    required
+                    className={`${styles.input} ${formErrors.Nombre ? styles.inputError : ''}`}
+                    placeholder="Ej: Consultoría, Desarrollo, etc."
+                  />
+                  {formErrors.Nombre && (
+                    <span className={styles.errorMessage}>{formErrors.Nombre}</span>
+                  )}
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="descripcion">Descripción (Opcional)</label>
+                  <textarea
+                    id="descripcion"
+                    value={formData.Descripcion || ''}
+                    onChange={(e) => {
+                      setFormData({ ...formData, Descripcion: e.target.value })
+                    }}
+                    rows={4}
+                    className={styles.textarea}
+                    placeholder="Descripción del tipo de servicio"
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="estatus">Estatus *</label>
+                  <select
+                    id="estatus"
+                    value={formData.Estatus}
+                    onChange={(e) => {
+                      setFormData({ ...formData, Estatus: e.target.value })
+                      if (formErrors.Estatus) {
+                        setFormErrors({ ...formErrors, Estatus: '' })
+                      }
+                    }}
+                    required
+                    className={`${styles.input} ${formErrors.Estatus ? styles.inputError : ''}`}
+                  >
+                    <option value="">Seleccione un estatus</option>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+                  {formErrors.Estatus && (
+                    <span className={styles.errorMessage}>{formErrors.Estatus}</span>
+                  )}
+                </div>
+
+                <div className={styles.formActions}>
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className={styles.btnCancel}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className={styles.btnSubmit}>
+                    {editingId ? 'Actualizar' : 'Crear'} Tipo de Servicio
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
